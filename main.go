@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 
-	_ "github.com/mingjiezxc/simple-ping"
+	_ "github.com/mingjiezxc/simple-ping/docs"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
