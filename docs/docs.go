@@ -18,12 +18,8 @@ var doc = `{
     "info": {
         "description": "{{.Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "API Support",
-            "url": "http://www.swagger.io/support",
-            "email": "support@swagger.io"
-        },
+        "termsOfService": "https://github.com/mingjiezxc",
+        "contact": {},
         "license": {
             "name": "Apache 2.0",
             "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
@@ -32,7 +28,25 @@ var doc = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/ping": {
+            "get": {
+                "description": "ping",
+                "consumes": [
+                    "text/plain"
+                ],
+                "summary": "a ping api",
+                "responses": {
+                    "200": {
+                        "description": "pong",
+                        "schema": {
+                            "type": "strng"
+                        }
+                    }
+                }
+            }
+        }
+    }
 }`
 
 type swaggerInfo struct {
@@ -47,10 +61,10 @@ type swaggerInfo struct {
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = swaggerInfo{
 	Version:     "1.0",
-	Host:        "petstore.swagger.io",
-	BasePath:    "/v2",
+	Host:        "",
+	BasePath:    "/v1",
 	Schemes:     []string{},
-	Title:       "Swagger Example API",
+	Title:       "Ping Agnet Manager Api",
 	Description: "This is a sample server Petstore server.",
 }
 

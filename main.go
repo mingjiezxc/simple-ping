@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -23,196 +22,78 @@ var (
 	ctx = context.Background()
 )
 
-// @title Swagger Example API
+// redis key
+var (
+	// pls add AgentName
+	AgentListKey        = "agent-list"
+	AgentOnlineKey      = "agent-online_"
+	AgentErrListKey     = "agent-err-list_"
+	AgentJobListKey     = "agent-job-list_"
+	AgentAllIPStatusKey = "agent-all-ip-status_"
+	// pls add AgentName & ipAddr
+	AgentIPLastMsKey = "agent-ip-last-ms_"
+
+	GroupListKey = "group-list"
+	// pl add groupName
+	GroupNameKey = "group_"
+
+	JobListKey = "job-list"
+	// pl add jobName
+	JobNameKey = "job_"
+)
+
+// @title Ping Agnet Manager Api
 // @version 1.0
 // @description This is a sample server Petstore server.
-// @termsOfService http://swagger.io/terms/
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
+// @termsOfService https://github.com/mingjiezxc
 
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host petstore.swagger.io
-// @BasePath /v2
+// @BasePath /v1
 func main() {
 	r := gin.Default()
-	r.GET("/ping", Ping)
-	r.GET("/agents", AgentList)
-	r.GET("/agents/:agentName", AgentList)
-	r.GET("/agents/:agentName/jobs", AgentJobList)
-	r.GET("/agents/:agentName/jobs/:jobName", AgentJobInfo)
-	r.POST("/agents/:agentName/jobs/:jobName", AgentJobAdd)
-	r.DELETE("/agents/:agentName/jobs/:jobName", AgentJobDel)
+	v1Group := r.Group("/v1")
+	v1Group.GET("/ping", Ping)
+	v1Group.GET("/agent", AgentList)
+	v1Group.GET("/agent/:agentName", AgentList)
+	v1Group.GET("/agent/:agentName/status", AgentAllIPStatus)
+	v1Group.GET("/agent/:agentName/err/ip", AgentErrIPList)
+	v1Group.GET("/agent/:agentName/ip/:ip/lastms", AgentIPLastMs)
 
-	r.GET("/ip/groups", IpGroupList)
-	r.GET("/ip/groups/:groupName", IpGroupInfo)
-	r.PUT("/ip/groups/:groupName", IpGroupAddIP)
-	r.POST("/ip/groups/:groupName", IpGroupDelIP)
-	r.DELETE("/ip/groups/:groupName", IpGroupDelete)
+	v1Group.GET("/agent/:agentName/job", AgentJobs)
+	v1Group.POST("/agent/:agentName/job/:jobName", AgentJobAdd)
+	v1Group.DELETE("/agent/:agentName/job/:jobName", AgentJobDel)
 
-	r.GET("/swagger/*any", ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "NAME_OF_ENV_VARIABLE"))
+	v1Group.GET("/job", JobList)
+	v1Group.POST("/job", JobAdd)
+	v1Group.DELETE("/job", JobDel)
+	v1Group.GET("/job/:jobName", JobInfo)
 
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	v1Group.GET("/ip/group", GroupList)
+	v1Group.PUT("/ip/group", GroupAddIP)
+	v1Group.POST("/ip/group", GroupDelIP)
+	v1Group.DELETE("/ip/group/:groupName", GroupDelete)
+	v1Group.GET("/ip/group/:groupName", GroupInfo)
+
+	url := ginSwagger.URL("/swagger/doc.json")
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
+
+	r.Run("0.0.0.0:8081") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
 
 // @Summary a ping api
 // @Description ping
 // @Accept  text/plain
-// @Success 200 {string} string	"pong"
+// @Success 200 {strng} string	"pong"
 // @Router /ping [get]
 func Ping(c *gin.Context) {
 	c.String(200, "pong")
 }
 
-func AgentList(c *gin.Context) {
-	val, err := rdb.SMembers(ctx, "agent-list").Result()
-	if PrintErr(err) {
-		c.JSON(400, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-func AgentOnline(c *gin.Context) {
-	agentName := c.Param("agentName")
-	val, err := rdb.Get(ctx, "agent-online_"+agentName).Result()
-	if PrintErr(err) {
-		c.JSON(400, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-func AgentJobList(c *gin.Context) {
-	agentName := c.Param("agentName")
-	val, err := rdb.Get(ctx, "agent-jobs_"+agentName).Result()
-	if PrintErr(err) {
-		c.JSON(400, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-func AgentJobInfo(c *gin.Context) {
-	agentName := c.Param("agentName")
-	jobName := c.Param("jobName")
-	val, err := rdb.Get(ctx, "agent_"+agentName+"_"+jobName).Result()
-	if PrintErr(err) {
-		c.JSON(400, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-func AgentJobAdd(c *gin.Context) {
-	agentName := c.Param("agentName")
-	jobName := c.Param("jobName")
-
-	var jobData JobStruct
-	if err := c.ShouldBindJSON(&jobData); err != nil {
-		if PrintErr(err) {
-			c.JSON(400, err)
-			return
-		}
-	}
-
-	jsobJson, err := json.Marshal(jobData)
-	if PrintErr(err) {
-		c.JSON(401, err)
-		return
-	}
-
-	// add to agent jobs list
-	_, err = rdb.SAdd(ctx, "agent-jobs_"+agentName, jobName).Result()
-	if PrintErr(err) {
-		c.JSON(402, err)
-		return
-	}
-
-	// update or add jobs
-	val, err := rdb.Set(ctx, "agent_"+agentName+"_"+jobName, jsobJson, 0).Result()
-	if PrintErr(err) {
-		c.JSON(403, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-func AgentJobDel(c *gin.Context) {
-	agentName := c.Param("agentName")
-	jobName := c.Param("jobName")
-
-	// remove job on agent jobs
-	_, err := rdb.SRem(ctx, "agent-jobs_"+agentName, jobName).Result()
-	if PrintErr(err) {
-		c.JSON(400, err)
-		return
-	}
-	// del job key
-	val, err := rdb.Del(ctx, "agent_"+agentName+"_"+jobName).Result()
-	if PrintErr(err) {
-		c.JSON(401, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-func IpGroupList(c *gin.Context) {
-	val, err := rdb.Get(ctx, "groups-list").Result()
-	if PrintErr(err) {
-		c.JSON(400, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-func IpGroupInfo(c *gin.Context) {
-	groupName := c.Param("groupName")
-	val, err := rdb.SMembers(ctx, "group_"+groupName).Result()
-	if PrintErr(err) {
-		c.JSON(400, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-func IpGroupAddIP(c *gin.Context) {
-	groupName := c.Param("groupName")
-	val, err := rdb.SAdd(ctx, "group_"+groupName).Result()
-	if PrintErr(err) {
-		c.JSON(400, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-func IpGroupDelIP(c *gin.Context) {
-	groupName := c.Param("groupName")
-	val, err := rdb.SRem(ctx, "group_"+groupName).Result()
-	if PrintErr(err) {
-		c.JSON(400, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-func IpGroupDelete(c *gin.Context) {
-	groupName := c.Param("groupName")
-	val, err := rdb.Del(ctx, "group_"+groupName).Result()
-	if PrintErr(err) {
-		c.JSON(400, err)
-		return
-	}
-	c.JSON(200, val)
-}
-
-type JobStruct struct {
-	SPEC  string
-	Name  string
-	Group []string
+type BaseReturn struct {
+	Status bool
+	Data   interface{}
 }
 
 func PrintErr(err error) bool {
