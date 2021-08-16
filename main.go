@@ -55,13 +55,14 @@ func main() {
 	r := gin.Default()
 	v1Group := r.Group("/v1")
 	v1Group.GET("/ping", Ping)
+	v1Group.POST("/test", Test1)
 	v1Group.GET("/agent", AgentList)
 	v1Group.GET("/agent/:agentName", AgentList)
 	v1Group.GET("/agent/:agentName/status", AgentAllIPStatus)
 	v1Group.GET("/agent/:agentName/err/ip", AgentErrIPList)
 	v1Group.GET("/agent/:agentName/ip/:ip/lastms", AgentIPLastMs)
 
-	v1Group.GET("/agent/:agentName/job", AgentJobs)
+	v1Group.GET("/agent/:agentName/job", AgentJobList)
 	v1Group.POST("/agent/:agentName/job/:jobName", AgentJobAdd)
 	v1Group.DELETE("/agent/:agentName/job/:jobName", AgentJobDel)
 
@@ -70,11 +71,11 @@ func main() {
 	v1Group.DELETE("/job", JobDel)
 	v1Group.GET("/job/:jobName", JobInfo)
 
-	v1Group.GET("/ip/group", GroupList)
-	v1Group.PUT("/ip/group", GroupAddIP)
-	v1Group.POST("/ip/group", GroupDelIP)
-	v1Group.DELETE("/ip/group/:groupName", GroupDelete)
-	v1Group.GET("/ip/group/:groupName", GroupInfo)
+	v1Group.GET("/ip/group", IPGroupList)
+	v1Group.PUT("/ip/group", IPGroupAddIP)
+	v1Group.DELETE("/ip/group", IPGroupDelIP)
+	v1Group.DELETE("/ip/group/:groupName", IPGroupDelete)
+	v1Group.GET("/ip/group/:groupName", IPGroupInfo)
 
 	url := ginSwagger.URL("/swagger/doc.json")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
@@ -89,6 +90,24 @@ func main() {
 // @Router /ping [get]
 func Ping(c *gin.Context) {
 	c.String(200, "pong")
+}
+
+// @Summary test
+// @Description test
+// @Accept application/json
+// @Produce application/json
+// @Param Name body BaseReturn true "Group Name"
+// @Success 200 {object} string "Success"
+// @Failure 500 {string} string "redis connect err"
+// @Router /test [post]
+func Test1(c *gin.Context) {
+	// aa, _ := c.GetRawData()
+	// jsonStr := BaseReturn{
+	// 	Status: true,
+	// 	Data:   "xxxxx",
+	// }
+	aa := []string{"xxx", "bb"}
+	c.JSON(200, aa)
 }
 
 type BaseReturn struct {
