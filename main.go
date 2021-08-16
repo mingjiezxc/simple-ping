@@ -32,13 +32,11 @@ var (
 	AgentAllIPStatusKey = "agent-all-ip-status_"
 	// pls add AgentName & ipAddr
 	AgentIPLastMsKey = "agent-ip-last-ms_"
-
-	GroupListKey = "group-list"
-	// pl add groupName
+	GroupListKey     = "group-list"
+	// pls add groupName
 	GroupNameKey = "group_"
-
-	JobListKey = "job-list"
-	// pl add jobName
+	JobListKey   = "job-list"
+	// pls add jobName
 	JobNameKey = "job_"
 )
 
