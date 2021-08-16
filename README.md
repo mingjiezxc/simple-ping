@@ -1,5 +1,5 @@
 # simple-ping
-   一个简单 ping server
+   本项目为 ping-agent 的简单web管理项目 & api，对 redis 进行 读写删操作，详细主键请查看 ping-agent 项目。
 
 
 

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -51,11 +52,33 @@ var (
 // @BasePath /v1
 func main() {
 	r := gin.Default()
+	// 配置模板
+	r.LoadHTMLGlob("web/*")
+	// 配置静态文件夹路径 第一个参数是api，第二个是文件夹路径
+	r.StaticFS("/static", http.Dir("./AdminLTE"))
+	// r.StaticFS("/web", http.Dir("./web"))
+
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "agent.html", gin.H{})
+	})
+
+	r.GET("/job", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "job.html", gin.H{})
+	})
+
+	r.GET("/ip/group", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "ipgroup.html", gin.H{})
+	})
+
+	r.GET("/ip/status", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "ipstatus.html", gin.H{})
+	})
+
 	v1Group := r.Group("/v1")
 	v1Group.GET("/ping", Ping)
-	v1Group.POST("/test", Test1)
 	v1Group.GET("/agent", AgentList)
-	v1Group.GET("/agent/:agentName", AgentList)
+
+	v1Group.GET("/agent/:agentName", AgentOnline)
 	v1Group.GET("/agent/:agentName/status", AgentAllIPStatus)
 	v1Group.GET("/agent/:agentName/err/ip", AgentErrIPList)
 	v1Group.GET("/agent/:agentName/ip/:ip/lastms", AgentIPLastMs)
@@ -69,6 +92,8 @@ func main() {
 	v1Group.DELETE("/job", JobDel)
 	v1Group.GET("/job/:jobName", JobInfo)
 
+	v1Group.GET("/ip/status", IPStatusInfo)
+
 	v1Group.GET("/ip/group", IPGroupList)
 	v1Group.PUT("/ip/group", IPGroupAddIP)
 	v1Group.DELETE("/ip/group", IPGroupDelIP)
@@ -78,7 +103,7 @@ func main() {
 	url := ginSwagger.URL("/swagger/doc.json")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 
-	r.Run("0.0.0.0:8081") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	r.Run("0.0.0.0:8445") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
 
 // @Summary a ping api
@@ -88,24 +113,6 @@ func main() {
 // @Router /ping [get]
 func Ping(c *gin.Context) {
 	c.String(200, "pong")
-}
-
-// @Summary test
-// @Description test
-// @Accept application/json
-// @Produce application/json
-// @Param Name body BaseReturn true "Group Name"
-// @Success 200 {object} string "Success"
-// @Failure 500 {string} string "redis connect err"
-// @Router /test [post]
-func Test1(c *gin.Context) {
-	// aa, _ := c.GetRawData()
-	// jsonStr := BaseReturn{
-	// 	Status: true,
-	// 	Data:   "xxxxx",
-	// }
-	aa := []string{"xxx", "bb"}
-	c.JSON(200, aa)
 }
 
 type BaseReturn struct {
