@@ -7,9 +7,11 @@ import (
 )
 
 type JobStruct struct {
-	SPEC  string   `json:"spec" example:"*/10 * * * * *"`
-	Name  string   `json:"name" example:"job1"`
-	Group []string `json:"group" example:"group1,group2"`
+	SPEC        string   `json:"spec" example:"*/10 * * * * *"`
+	Name        string   `json:"name" example:"job1"`
+	Group       []string `json:"group" example:"group1,group2"`
+	PTTL        int64    `json:"pttl" example:"21"`
+	AllowedLoss int64    `json:"allowedloss" example:"1"`
 }
 
 // @Summary  Job List
@@ -66,7 +68,7 @@ func JobAdd(c *gin.Context) {
 	}
 
 	// add job to jobList
-	err := rdb.SAdd(ctx, JobListKey).Err()
+	err := rdb.SAdd(ctx, JobListKey, jobData.Name).Err()
 	if PrintErr(err) {
 		c.JSON(202, BaseReturn{Status: false, Data: err})
 		return

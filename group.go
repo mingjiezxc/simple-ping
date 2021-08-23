@@ -1,6 +1,8 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
 type GroupStruct struct {
 	Name string   `json:"name" example:"group1"`
@@ -16,7 +18,7 @@ type GroupStruct struct {
 // @Failure 201 {string} string "redis connect err"
 // @Router /ip/group [get]
 func IPGroupList(c *gin.Context) {
-	val, err := rdb.Get(ctx, "group-list").Result()
+	val, err := rdb.SMembers(ctx, GroupListKey).Result()
 	if PrintErr(err) {
 		c.JSON(201, err)
 		return
@@ -60,7 +62,13 @@ func IPGroupAddIP(c *gin.Context) {
 		return
 	}
 
-	err := rdb.SAdd(ctx, GroupNameKey+groupData.Name, groupData.IP).Err()
+	err := rdb.SAdd(ctx, GroupListKey, groupData.Name).Err()
+	if PrintErr(err) {
+		c.JSON(201, err)
+		return
+	}
+
+	err = rdb.SAdd(ctx, GroupNameKey+groupData.Name, groupData.IP).Err()
 	if PrintErr(err) {
 		c.JSON(201, err)
 		return

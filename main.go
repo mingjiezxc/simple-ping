@@ -74,6 +74,10 @@ func main() {
 		c.HTML(http.StatusOK, "ipstatus.html", gin.H{})
 	})
 
+	r.GET("/test", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "test.html", gin.H{})
+	})
+
 	v1Group := r.Group("/v1")
 	v1Group.GET("/ping", Ping)
 	v1Group.GET("/agent", AgentList)

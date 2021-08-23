@@ -37,7 +37,10 @@
 
             <div class="card">
               <div class="card-header">
-                <h3 class="card-title">DataTable with default features</h3>
+              <button class="btn btn-primary btn-lg" onclick="jsOpenModal1()">
+                  Add Group
+              </button>
+
               </div>
               <!-- /.card-header -->
               <div class="card-body">
@@ -59,27 +62,177 @@
 
   {{template "body-end"}}
 
+
+<div class="modal fade" id="myModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabel2">
+                    Group Edit
+                </h4>
+              <button class="btn btn-primary btn-lg" onClick="AddGroupIPChild()">
+                  Add IP
+              </button>
+
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+            <div class="modal-footer">
+              <div id="target">
+              </div>
+                <button type="button" class="btn btn-primary" onClick="AddIpGroupRequest()">
+                    提交更改
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<!-- modal script -->
+<script>
+  function jsOpenModal1() {
+    //手动切换模态框。   还有一个modal('hide')	手动隐藏模态框。
+        $('#myModal1').modal('toggle');
+
+        var form = document.createElement("form");
+        form.setAttribute("id", "ip-list");
+
+        var groupNameStr = document.createElement("p");
+        groupNameStr.innerHTML  = "Group Name:"
+
+        var groupNameInput = document.createElement("input");
+        groupNameInput.setAttribute("type", "text");
+        groupNameInput.setAttribute("class", "form-control");
+        groupNameInput.setAttribute("id", "groupName");
+
+        var IpStr = document.createElement("p");
+        IpStr.innerHTML  = "IP:"
+
+        var ipInput = document.createElement("input");
+        ipInput.setAttribute("type", "text");
+        ipInput.setAttribute("class", "form-control");
+        ipInput.setAttribute("data-inputmask", "'alias': 'ip'");
+        ipInput.setAttribute("data-mask", "");
+        ipInput.setAttribute("inputmode", "numeric");
+        ipInput.setAttribute("name", "ipArray");
+
+
+        
+        form.appendChild(groupNameStr); 
+        form.appendChild(groupNameInput); 
+
+        form.appendChild(IpStr); 
+        form.appendChild(ipInput); 
+
+        document.getElementById("modalBody").appendChild(form);
+
+
+        if (document.getElementById("ip-list")) {
+          document.getElementById("modalBody").removeChild(document.getElementById("ip-list"));
+        }
+
+        document.getElementById("modalBody").appendChild(form);
+        $('[data-mask]').inputmask()
+    }
+
+
+
+
+
+
+</script>
+
+<!-- add IP script -->
+<script>
+
+    
+function AddGroupIPChild() {
+
+  // Create a form synamically
+  var form = document.getElementById("ip-list");
+
+  // Create an input element for Full Name
+  var ipInput = document.createElement("input");
+  ipInput.setAttribute("type", "text");
+  ipInput.setAttribute("class", "form-control");
+  ipInput.setAttribute("data-inputmask", "'alias': 'ip'");
+  ipInput.setAttribute("data-mask", "");
+  ipInput.setAttribute("inputmode", "numeric");
+  ipInput.setAttribute("name", "ipArray");
+
+  // Append the full name input to the form
+  form.appendChild(ipInput); 
+
+  $('[data-mask]').inputmask()
+  // document.getElementById("ip-list").appendChild(form);
+}
+
+function AddIpGroupRequest() {
+    var input = document.getElementsByName('ipArray');
+    var ipList = new Array();
+    for (var i = 0; i < input.length; i++) {
+      if ( input[i].value == "" ) {
+        continue;
+      }
+      ipList[i] = input[i].value
+    }
+    console.log($('#groupName').val());
+
+    var person = {
+        name: $("#groupName").val(),
+        ip:  ipList
+    }
+    console.log(person);
+    $('#target').html('sending..');
+
+    $.ajax({
+        url: '/v1/ip/group',
+        type: 'put',
+       // dataType: "json",  
+        contentType: 'application/json',
+        success: function (data) {
+            $('#target').html(data.msg);
+        },
+        error: function (data) {
+            $('#target').html(data.msg);
+        },
+        data: JSON.stringify(person)
+    });
+
+
+    $('#myModal1').modal('hide');
+}
+
+
+</script>
+
+
+
+
 <!-- Page specific script -->
 <script>
 
 // Create table with data set
   var table=$('#example1').DataTable( {
       "columns": [
-          { "title": "Job Name" },
-          { "title": "SPEC" },
-          { "title": "Group" },
+          { "title": "Group Name" },
+          { "title": "IP" },
           { "title": "Edit" },
       ]
   } );
 
 
-  groups = $.ajax({type: "GET", url: "/v1/ip/group", async: false}).responseJSON;
+  data1 = $.ajax({type: "GET", url: "/v1/ip/group", async: false});
 
-  for (var i=0,len=groups.length; i<len; i++) {
-    var status = $.ajax({type: "GET", url: "/v1/group/" + groups[i], async: false}).responseJSON;
-
-    table.row.add([status[i].name,status[i].spec,status[i].group,"edit"]);
+  groups = data1.responseJSON;
+  if (data1.status == 200) {
+    for (var i=0,len=groups.length; i<len; i++) {
+      ipArry = $.ajax({type: "GET",dataType: "json", url: "/v1/ip/group/" + groups[i], async: false}).responseJSON; 
+      table.row.add([groups[i],ipArry,"edit"]);
+    };
   };
+
+
 
   
   table.draw( false );

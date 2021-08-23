@@ -59,6 +59,33 @@
 
   {{template "body-end"}}
 
+  <div class="modal fade" id="myModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabel2">
+                    Group Edit
+                </h4>
+              <button class="btn btn-primary btn-lg" onClick="AddGroupIPChild()">
+                  Add IP
+              </button>
+
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+            <div class="modal-footer">
+              <div id="target">
+              </div>
+                <button type="button" class="btn btn-primary" onClick="AddIpGroupRequest()">
+                    提交更改
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+
+
 <!-- Page specific script -->
 <script>
 
@@ -79,16 +106,39 @@
     var status = $.ajax({type: "GET", url: "/v1/agent/" + agents[i], async: false}).responseText;
     var jobs = $.ajax({type: "GET", url: "/v1/agent/" + agents[i] + "/job", async: false}).responseText;
 
-    table.row.add([agents[i],status,jobs,"edit"]);
+    table.row.add([agents[i],status,jobs,'<button type="button" class="btn btn-primary" onClick=EditAgentModa("'+agents[i]+'") >  edit</button>']);
   };
 
-  
   table.draw( false );
-
 
 </script>
 
+<script>
+  function EditAgentModa(agentName) {
+    $('#myModal1').modal('toggle');
+    var jobStatus = $.ajax({type: "GET", url: "/v1/agent/" + agents[i] + "/job", async: false}).responseJSON;
+    var jobList = JSON.parse($.ajax({type: "GET", url: "/v1/job", async: false}).responseJSON);
 
+
+
+    var form = document.createElement("form");
+        form.setAttribute("id", "editModa");
+
+    for (var j=0,len=jobStatus.job.length; i<len; i++)
+
+    var JobSelect = document.createElement("select");
+    JobSelect.setAttribute("class", "form-control");
+    JobSelect.setAttribute("name", "JobSelect");
+
+    for (var i=0,len=jobList.length; i<len; i++) {
+      var tmpSelect = document.createElement("option");
+      tmpSelect.innerHTML=groups[i];
+      JobSelect.appendChild(tmpSelect);
+    };
+
+
+  }
+</script>
 
 </body>
 </html>

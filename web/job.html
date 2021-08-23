@@ -17,12 +17,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Agent List</h1>
+            <h1>Job List</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="/">Home</a></li>
-              <li class="breadcrumb-item active">Agent List</li>
+              <li class="breadcrumb-item active">Job List</li>
             </ol>
           </div>
         </div>
@@ -37,7 +37,10 @@
 
             <div class="card">
               <div class="card-header">
-                <h3 class="card-title">DataTable with default features</h3>
+              <button class="btn btn-primary btn-lg" onclick="jsOpenModal1()">
+                  Add Job
+              </button>
+
               </div>
               <!-- /.card-header -->
               <div class="card-body">
@@ -59,6 +62,201 @@
 
   {{template "body-end"}}
 
+
+<div class="modal fade" id="myModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabel2">
+                    Job Edit
+                </h4>
+              <button class="btn btn-primary btn-lg" onClick="AddGroupIPChild()">
+                  Add Group
+              </button>
+
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+            <div class="modal-footer">
+              <div id="target">
+              </div>
+                <button type="button" class="btn btn-primary" onClick="AddJobRequest()">
+                    提交更改
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<!-- modal script -->
+<script>
+  function jsOpenModal1() {
+    //手动切换模态框。   还有一个modal('hide')	手动隐藏模态框。
+        $('#myModal1').modal('toggle');
+
+        var form = document.createElement("form");
+        form.setAttribute("id", "job-list");
+
+        var NameInput = document.createElement("input");
+        NameInput.setAttribute("type", "text");
+        NameInput.setAttribute("class", "form-control");
+        NameInput.setAttribute("placeholder", "str: Job Name");
+        NameInput.setAttribute("id", "jobName");
+
+
+
+        var SPECInput = document.createElement("input");
+        SPECInput.setAttribute("type", "text");
+        SPECInput.setAttribute("class", "form-control");
+        SPECInput.setAttribute("placeholder", "str: * * * * * */秒 分 时 日 月 星");
+        SPECInput.setAttribute("id", "SPEC");
+        
+        var PTTLInput = document.createElement("input");
+        PTTLInput.setAttribute("type", "text");
+        PTTLInput.setAttribute("class", "form-control");
+        PTTLInput.setAttribute("placeholder", "int: Key time out Seconds");
+        PTTLInput.setAttribute("id", "PTTL");
+
+        var AllowedLossInput = document.createElement("input");
+        AllowedLossInput.setAttribute("type", "text");
+        AllowedLossInput.setAttribute("class", "form-control");
+        AllowedLossInput.setAttribute("placeholder", "int: 在错误队列时允许掉包的数量");
+        AllowedLossInput.setAttribute("id", "AllowedLoss" );
+
+        var GroupStr = document.createElement("p");
+        GroupStr.innerHTML  = "Group:"
+
+        var GroupInput = document.createElement("select");
+        GroupInput.setAttribute("class", "form-control");
+        GroupInput.setAttribute("name", "GroupArray");
+
+
+
+        data1 = $.ajax({type: "GET", url: "/v1/ip/group", async: false});
+
+        groups = data1.responseJSON;
+        if (data1.status == 200) {
+          for (var i=0,len=groups.length; i<len; i++) {
+            var tmpSelect = document.createElement("option");
+            tmpSelect.innerHTML=groups[i];
+            GroupInput.appendChild(tmpSelect);
+          };
+        };
+
+
+        
+        form.appendChild(NameInput); 
+        form.appendChild(SPECInput); 
+        form.appendChild(PTTLInput); 
+        form.appendChild(AllowedLossInput); 
+        form.appendChild(GroupStr); 
+        form.appendChild(GroupInput); 
+
+        document.getElementById("modalBody").appendChild(form);
+
+
+        if (document.getElementById("job-list")) {
+          document.getElementById("modalBody").removeChild(document.getElementById("job-list"));
+        }
+
+        document.getElementById("modalBody").appendChild(form);
+        $('[data-mask]').inputmask()
+    }
+
+
+// <!-- add IP script -->
+    
+function AddGroupIPChild() {
+
+  // Create a form synamically
+  var form = document.getElementById("job-list");
+
+  // Create an input element for Full Name
+  var ArrayInput = document.createElement("select");
+  ArrayInput.setAttribute("class", "form-control");
+  ArrayInput.setAttribute("name", "GroupArray");
+
+
+
+  data1 = $.ajax({type: "GET", url: "/v1/ip/group", async: false});
+
+  groups = data1.responseJSON;
+  if (data1.status == 200) {
+    for (var g=0,len=groups.length; g<len; g++) {
+      var checkGroup = false
+      var GroupArray = document.getElementsByName('GroupArray');
+      for (var i = 0; i < GroupArray.length; i++) {
+        if ( GroupArray[i].value == groups[g] ) {
+          
+          checkGroup = true
+          break;
+        }
+      }
+
+      if (checkGroup) {
+        continue
+      }
+
+      var tmpSelect = document.createElement("option");
+      tmpSelect.setAttribute("id", "groupSelectOption");
+
+      tmpSelect.innerHTML=groups[g];
+      ArrayInput.appendChild(tmpSelect);
+    };
+  };
+
+  // Append the full name input to the form
+  form.appendChild(ArrayInput); 
+
+  // document.getElementById("ip-list").appendChild(form);
+}
+
+function AddJobRequest() {
+    var input = document.getElementsByName('GroupArray');
+    var dataList = new Array();
+    for (var i = 0; i < input.length; i++) {
+      if ( input[i].value == "" ) {
+        continue;
+      }
+      dataList[i] = input[i].value
+    }
+
+    var person = {
+
+        name: $("#jobName").val(),
+        spec: $("#SPEC").val(),
+        pttl: parseInt($("#PTTL").val()),
+        allowedloss: parseInt($("#AllowedLoss").val()),
+        group:  dataList,
+    }
+    console.log(person)
+
+    $('#target').html('sending..');
+
+    $.ajax({
+        url: '/v1/job',
+        type: 'post',
+       // dataType: "json",  
+        contentType: 'application/json',
+        success: function (data) {
+            $('#target').html(data.msg);
+        },
+        error: function (data) {
+            $('#target').html(data.msg);
+        },
+        data: JSON.stringify(person)
+    });
+
+
+    $('#myModal1').modal('hide');
+}
+
+
+</script>
+
+
+
+
 <!-- Page specific script -->
 <script>
 
@@ -67,19 +265,27 @@
       "columns": [
           { "title": "Job Name" },
           { "title": "SPEC" },
+          { "title": "PTTL" },
+          { "title": "AllowedLoss" },
           { "title": "Group" },
-          { "title": "Edit" },
+          { "title": "Edit" },  
+
       ]
   } );
 
 
-  jobs = $.ajax({type: "GET", url: "/v1/job", async: false}).responseJSON;
+  data1 = $.ajax({type: "GET", url: "/v1/job", async: false});
 
-  for (var i=0,len=jobs.length; i<len; i++) {
-    var status = $.ajax({type: "GET", url: "/v1/job/" + jobs[i], async: false}).responseJSON;
-
-    table.row.add([status[i].name,status[i].spec,status[i].group,"edit"]);
+  jobs = data1.responseJSON;
+  if (data1.status == 200) {
+    for (var i=0,len=jobs.length; i<len; i++) {
+      jobJson = $.ajax({type: "GET",dataType: "json", url: "/v1/job/" + jobs[i], async: false}).responseJSON; 
+      jobData = JSON.parse(jobJson);
+      table.row.add([jobs[i],jobData.name, jobData.pttl,jobData.allowedloss,jobData.group,"edit"]);
+    };
   };
+
+
 
   
   table.draw( false );
