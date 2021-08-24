@@ -66,8 +66,8 @@
                 <h4 class="modal-title" id="myModalLabel2">
                     Group Edit
                 </h4>
-              <button class="btn btn-primary btn-lg" onClick="AddGroupIPChild()">
-                  Add IP
+              <button class="btn btn-primary btn-lg" onClick="AddModaListChild()">
+                  Add Job
               </button>
 
             </div>
@@ -76,7 +76,7 @@
             <div class="modal-footer">
               <div id="target">
               </div>
-                <button type="button" class="btn btn-primary" onClick="AddIpGroupRequest()">
+                <button type="button" class="btn btn-primary" id=ModaRequestID onClick="ModaRequest()">
                     提交更改
                 </button>
             </div>
@@ -87,18 +87,34 @@
 
 
 <!-- Page specific script -->
+
+
 <script>
+  var ModaDelArray = new Array()
 
-// Create table with data set
+  // Create table with data set
   var table=$('#example1').DataTable( {
-      "columns": [
-          { "title": "Agent Name" },
-          { "title": "Status" },
-          { "title": "Jobs" },
-          { "title": "Edit" },
-      ]
-  } );
+    "columns": [
+            { "title": "Agent Name" },
+            { "title": "Status" },
+            { "title": "Jobs" },
+            { "title": "Edit" },
+        ]
+    } );
 
+
+  DataTableDataUpdate()
+
+
+
+
+function DataTableDataUpdate() {
+
+    var table = $('#example1').DataTable();
+ 
+    table
+        .clear()
+        .draw();
 
   agents = $.ajax({type: "GET", url: "/v1/agent", async: false}).responseJSON;
 
@@ -106,39 +122,178 @@
     var status = $.ajax({type: "GET", url: "/v1/agent/" + agents[i], async: false}).responseText;
     var jobs = $.ajax({type: "GET", url: "/v1/agent/" + agents[i] + "/job", async: false}).responseText;
 
-    table.row.add([agents[i],status,jobs,'<button type="button" class="btn btn-primary" onClick=EditAgentModa("'+agents[i]+'") >  edit</button>']);
+    table.row.add([agents[i],status,jobs,'<button type="button" class="btn btn-primary" onClick=EditAgentModa(\''+agents[i]+'\') >  edit</button>']);
   };
 
   table.draw( false );
+}
 
-</script>
 
-<script>
+
   function EditAgentModa(agentName) {
     $('#myModal1').modal('toggle');
-    var jobStatus = $.ajax({type: "GET", url: "/v1/agent/" + agents[i] + "/job", async: false}).responseJSON;
-    var jobList = JSON.parse($.ajax({type: "GET", url: "/v1/job", async: false}).responseJSON);
+    ModaDelArray.length = 0
 
+    document.getElementById("ModaRequestID").setAttribute("onClick", "ModaRequest('"+agentName+"')");
 
+    var AgentJobs = $.ajax({type: "GET", url: "/v1/agent/" + agentName + "/job", async: false}).responseJSON;
+    // var AgentJobs = JSON.parse(AgentJobsJson);
 
-    var form = document.createElement("form");
-        form.setAttribute("id", "editModa");
+    var form = document.createElement("moda-form");
+    form.setAttribute("id", "modalBodyFrom");
 
-    for (var j=0,len=jobStatus.job.length; i<len; i++)
+    for (var j=0,len=AgentJobs.length; j<len; j++) {
+      var tmpli = document.createElement("li");
+      tmpli.setAttribute("class", "input-group-append");
 
-    var JobSelect = document.createElement("select");
-    JobSelect.setAttribute("class", "form-control");
-    JobSelect.setAttribute("name", "JobSelect");
+      // create del button
+      var delButton = document.createElement("button");
+      delButton.setAttribute("class", "input-group-text");
+      delButton.innerHTML="del" ;
 
-    for (var i=0,len=jobList.length; i<len; i++) {
+      var JobSelect = document.createElement("select");
+      JobSelect.setAttribute("class", "form-control");
+      JobSelect.setAttribute("name", "JobSelect");
       var tmpSelect = document.createElement("option");
-      tmpSelect.innerHTML=groups[i];
+      tmpSelect.innerHTML=AgentJobs[j];
       JobSelect.appendChild(tmpSelect);
+
+      
+      tmpli.appendChild(JobSelect)
+      tmpli.appendChild(delButton)
+      form.appendChild(tmpli);
     };
 
 
+    if (document.getElementById("modalBodyFrom")) {
+      document.getElementById("modalBody").removeChild(document.getElementById("modalBodyFrom"));
+    }
+
+
+    document.getElementById("modalBody").appendChild(form);
+
+    $("moda-form").on("click", "button", function(e) {
+      e.preventDefault();
+
+
+      ModaDelArray.push( $(this).siblings("select").val());
+
+      $(this).parent().remove();
+  });
+
+
   }
+
+  function AddModaListChild() {
+    var jobList = $.ajax({type: "GET", url: "/v1/job", async: false}).responseJSON;
+    // console.log(jobListJson);
+    // var jobList = JSON.parse(jobListJson);
+    var form = document.getElementById("modalBodyFrom");
+    var tmpli = document.createElement("li");
+    tmpli.setAttribute("class", "input-group-append");
+
+    var delButton = document.createElement("button");
+    delButton.setAttribute("class", "input-group-text");
+    delButton.innerHTML="del";
+
+    var jobModaSelect = document.createElement("select");
+    jobModaSelect.setAttribute("class", "form-control");
+    jobModaSelect.setAttribute("name", "JobSelect");
+
+    for (var j=0,len=jobList.length; j<len; j++) {
+      var tmpSelect = document.createElement("option");
+      tmpSelect.innerHTML=jobList[j];
+      jobModaSelect.appendChild(tmpSelect);
+    };
+
+    tmpli.appendChild(jobModaSelect);
+    tmpli.appendChild(delButton);
+    form.appendChild(tmpli);
+
+  }
+
+  $('#target').html('sending..');
+
+
+  function ModaRequest(agentName) {
+    var formInput = document.getElementsByName('JobSelect');
+
+    console.log(ModaDelArray)
+    for (var a = 0; a < ModaDelArray.length; a++) {
+      var onInputData = false ;
+
+      for (var i = 0; i < formInput.length; i++) {
+        if ( formInput[i].value == ModaDelArray[a] ) {
+          onInputData = true;
+          break;
+        }
+      }
+
+      if (onInputData) {
+        continue;
+      }
+
+
+      $.ajax({
+        url: '/v1/agent/'+agentName+ '/job/' + ModaDelArray[a],
+        type: 'delete',
+        // dataType: "json",  
+        contentType: 'application/json',
+        success: function (data) {
+            $('#target').html(data);
+        },
+        error: function (data) {
+            $('#target').html(data);
+        },
+      });
+
+
+    }
+
+
+
+
+
+    for (var i = 0; i < formInput.length; i++) {
+      if ( formInput[i].value == "" ) {
+        continue;
+      }
+      $.ajax({
+        url: '/v1/agent/'+agentName+ '/job/' + formInput[i].value,
+        type: 'post',
+       // dataType: "json",  
+        contentType: 'application/json',
+        success: function (data) {
+            $('#target').html(data);
+        },
+        error: function (data) {
+            $('#target').html(data);
+        },
+    });
+
+    }
+
+
+    DataTableDataUpdate()
+
+    $('#myModal1').modal('hide');
+  }
+
+
 </script>
+
+
+
+
+<script>
+
+
+
+
+</script>
+
+
+
 
 </body>
 </html>
