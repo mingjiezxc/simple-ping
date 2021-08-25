@@ -94,6 +94,7 @@
 
   // Create table with data set
   var table=$('#example1').DataTable( {
+    "pageLength": 500,
     "columns": [
             { "title": "Agent Name" },
             { "title": "Status" },
@@ -174,12 +175,9 @@ function DataTableDataUpdate() {
 
     $("moda-form").on("click", "button", function(e) {
       e.preventDefault();
-
-
       ModaDelArray.push( $(this).siblings("select").val());
-
       $(this).parent().remove();
-  });
+    });
 
 
   }
@@ -218,7 +216,6 @@ function DataTableDataUpdate() {
   function ModaRequest(agentName) {
     var formInput = document.getElementsByName('JobSelect');
 
-    console.log(ModaDelArray)
     for (var a = 0; a < ModaDelArray.length; a++) {
       var onInputData = false ;
 

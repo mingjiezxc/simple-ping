@@ -37,7 +37,7 @@
 
             <div class="card">
               <div class="card-header">
-              <button class="btn btn-primary btn-lg" onclick="jsOpenModal1()">
+              <button class="btn btn-primary btn-lg" onclick="ModaEdit()">
                   Add Group
               </button>
 
@@ -70,7 +70,7 @@
                 <h4 class="modal-title" id="myModalLabel2">
                     Group Edit
                 </h4>
-              <button class="btn btn-primary btn-lg" onClick="AddGroupIPChild()">
+              <button class="btn btn-primary btn-lg" onClick="ModeAddChild()">
                   Add IP
               </button>
 
@@ -80,7 +80,7 @@
             <div class="modal-footer">
               <div id="target">
               </div>
-                <button type="button" class="btn btn-primary" onClick="AddIpGroupRequest()">
+                <button type="button" class="btn btn-primary" onClick="ModaRequest()">
                     提交更改
                 </button>
             </div>
@@ -90,68 +90,104 @@
 
 <!-- modal script -->
 <script>
-  function jsOpenModal1() {
-    //手动切换模态框。   还有一个modal('hide')	手动隐藏模态框。
-        $('#myModal1').modal('toggle');
 
-        var form = document.createElement("form");
-        form.setAttribute("id", "ip-list");
+var ModaDelArray = new Array()
 
-        var groupNameStr = document.createElement("p");
-        groupNameStr.innerHTML  = "Group Name:"
+// Create table with data set
+var table=$('#example1').DataTable( {
+    "pageLength": 500,
+      "columns": [
+          { "title": "Group Name" },
+          { "title": "IP" },
+          { "title": "Edit" },
+      ]
+  } );
 
-        var groupNameInput = document.createElement("input");
-        groupNameInput.setAttribute("type", "text");
-        groupNameInput.setAttribute("class", "form-control");
-        groupNameInput.setAttribute("id", "groupName");
-
-        var IpStr = document.createElement("p");
-        IpStr.innerHTML  = "IP:"
-
-        var ipInput = document.createElement("input");
-        ipInput.setAttribute("type", "text");
-        ipInput.setAttribute("class", "form-control");
-        ipInput.setAttribute("data-inputmask", "'alias': 'ip'");
-        ipInput.setAttribute("data-mask", "");
-        ipInput.setAttribute("inputmode", "numeric");
-        ipInput.setAttribute("name", "ipArray");
+  DataTableDataUpdate()
 
 
-        
-        form.appendChild(groupNameStr); 
-        form.appendChild(groupNameInput); 
+function DataTableDataUpdate() {
 
-        form.appendChild(IpStr); 
-        form.appendChild(ipInput); 
+  table
+      .clear()
+      .draw();
 
-        document.getElementById("modalBody").appendChild(form);
+  data1 = $.ajax({type: "GET", url: "/v1/ip/group", async: false});
 
+  groups = data1.responseJSON;
+  if (data1.status == 200) {
+    for (var i=0,len=groups.length; i<len; i++) {
+      ipArry = $.ajax({type: "GET",dataType: "json", url: "/v1/ip/group/" + groups[i], async: false}).responseJSON; 
+      table.row.add([groups[i],ipArry,'<button type="button" class="btn btn-primary" onClick=ModaEdit(\''+groups[i]+'\') >  edit</button>']);
+    };
+  };
 
-        if (document.getElementById("ip-list")) {
-          document.getElementById("modalBody").removeChild(document.getElementById("ip-list"));
-        }
-
-        document.getElementById("modalBody").appendChild(form);
-        $('[data-mask]').inputmask()
-    }
+  table.draw( false );
+}
 
 
 
+function ModaEdit(objectName) {
+  // init 
+  ModaDelArray.length = 0
+  $('#target').html("");
 
+  //手动切换模态框。   还有一个modal('hide')	手动隐藏模态框。
+  $('#myModal1').modal('toggle');
 
+  var form = document.createElement("moda-form");
+  form.setAttribute("id", "ip-list");
 
-</script>
+  var groupNameStr = document.createElement("p");
+  groupNameStr.innerHTML  = "Group Name:"
+  form.appendChild(groupNameStr); 
 
-<!-- add IP script -->
-<script>
+  var groupNameInput = document.createElement("input");
+  groupNameInput.setAttribute("type", "text");
+  groupNameInput.setAttribute("class", "form-control");
+  groupNameInput.setAttribute("id", "groupName");
+  if (typeof  objectName !== "undefined") {
+    groupNameInput.setAttribute("value", objectName);
+  }
+  form.appendChild(groupNameInput); 
 
+  var IpStr = document.createElement("p");
+  IpStr.innerHTML  = "IP:"
+  form.appendChild(IpStr); 
+
+  if (typeof  objectName !== "undefined") {
+    ips = $.ajax({type: "GET", url: "/v1/ip/group/" + objectName, async: false}).responseJSON;
     
-function AddGroupIPChild() {
+    for (var i=0,len=ips.length; i<len; i++) {
+      tmpli = CreateChild(ips[i])
+      form.appendChild(tmpli); 
+    }
+  }
 
-  // Create a form synamically
-  var form = document.getElementById("ip-list");
+  document.getElementById("modalBody").appendChild(form);
 
-  // Create an input element for Full Name
+
+  if (document.getElementById("ip-list")) {
+    document.getElementById("modalBody").removeChild(document.getElementById("ip-list"));
+  }
+
+  document.getElementById("modalBody").appendChild(form);
+  $('[data-mask]').inputmask()
+
+  $("moda-form").on("click", "button", function(e) {
+      e.preventDefault();
+      ModaDelArray.push( $(this).siblings("input").val());
+      $(this).parent().remove();
+    });
+
+
+
+}
+
+function CreateChild(ip){
+  var tmpli = document.createElement("li");
+  tmpli.setAttribute("class", "input-group-append");
+
   var ipInput = document.createElement("input");
   ipInput.setAttribute("type", "text");
   ipInput.setAttribute("class", "form-control");
@@ -159,6 +195,28 @@ function AddGroupIPChild() {
   ipInput.setAttribute("data-mask", "");
   ipInput.setAttribute("inputmode", "numeric");
   ipInput.setAttribute("name", "ipArray");
+  if (typeof  ip !== "undefined") { 
+    ipInput.setAttribute("value", ip);
+  }
+
+
+  // create del button
+  var delButton = document.createElement("button");
+  delButton.setAttribute("class", "input-group-text");
+  delButton.innerHTML="del" ;
+
+  tmpli.appendChild(ipInput); 
+  tmpli.appendChild(delButton); 
+  return tmpli
+}
+
+function ModeAddChild() {
+
+  // Create a form synamically
+  var form = document.getElementById("ip-list");
+
+  // Create an input element for Full Name
+  var ipInput  = CreateChild()
 
   // Append the full name input to the form
   form.appendChild(ipInput); 
@@ -167,14 +225,24 @@ function AddGroupIPChild() {
   // document.getElementById("ip-list").appendChild(form);
 }
 
-function AddIpGroupRequest() {
+function ModaRequest() {
     var input = document.getElementsByName('ipArray');
     var ipList = new Array();
+    
     for (var i = 0; i < input.length; i++) {
       if ( input[i].value == "" ) {
         continue;
       }
       ipList[i] = input[i].value
+
+      // del list check
+      for (var a = 0;a < ModaDelArray.length; a++) {
+        if ( input[i].value == ModaDelArray[a] ) {
+          ModaDelArray.pop(ModaDelArray[a])
+        }
+      }
+      
+
     }
     console.log($('#groupName').val());
 
@@ -182,8 +250,8 @@ function AddIpGroupRequest() {
         name: $("#groupName").val(),
         ip:  ipList
     }
+
     console.log(person);
-    $('#target').html('sending..');
 
     $.ajax({
         url: '/v1/ip/group',
@@ -191,16 +259,38 @@ function AddIpGroupRequest() {
        // dataType: "json",  
         contentType: 'application/json',
         success: function (data) {
-            $('#target').html(data.msg);
+            $('#target').html(data);
         },
         error: function (data) {
-            $('#target').html(data.msg);
+            $('#target').html(data);
         },
         data: JSON.stringify(person)
     });
 
 
+    var delPerson = {
+        name: $("#groupName").val(),
+        ip:  ModaDelArray
+    }
+    console.log(delPerson);
+
+    $.ajax({
+        url: '/v1/ip/group',
+        type: 'delete',
+       // dataType: "json",  
+        contentType: 'application/json',
+        success: function (data) {
+            $('#target').html(data);
+        },
+        error: function (data) {
+            $('#target').html(data);
+        },
+        data: JSON.stringify(delPerson)
+    });
+
+
     $('#myModal1').modal('hide');
+    DataTableDataUpdate()
 }
 
 
@@ -209,36 +299,8 @@ function AddIpGroupRequest() {
 
 
 
-<!-- Page specific script -->
-<script>
-
-// Create table with data set
-  var table=$('#example1').DataTable( {
-      "columns": [
-          { "title": "Group Name" },
-          { "title": "IP" },
-          { "title": "Edit" },
-      ]
-  } );
 
 
-  data1 = $.ajax({type: "GET", url: "/v1/ip/group", async: false});
-
-  groups = data1.responseJSON;
-  if (data1.status == 200) {
-    for (var i=0,len=groups.length; i<len; i++) {
-      ipArry = $.ajax({type: "GET",dataType: "json", url: "/v1/ip/group/" + groups[i], async: false}).responseJSON; 
-      table.row.add([groups[i],ipArry,"edit"]);
-    };
-  };
-
-
-
-  
-  table.draw( false );
-
-
-</script>
 
 
 

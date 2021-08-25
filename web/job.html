@@ -37,7 +37,7 @@
 
             <div class="card">
               <div class="card-header">
-              <button class="btn btn-primary btn-lg" onclick="jsOpenModal1()">
+              <button class="btn btn-primary btn-lg" onclick="ModaEdit()">
                   Add Job
               </button>
 
@@ -70,7 +70,7 @@
                 <h4 class="modal-title" id="myModalLabel2">
                     Job Edit
                 </h4>
-              <button class="btn btn-primary btn-lg" onClick="AddGroupIPChild()">
+              <button class="btn btn-primary btn-lg" onClick="ModeAddChild()">
                   Add Group
               </button>
 
@@ -90,120 +90,196 @@
 
 <!-- modal script -->
 <script>
-  function jsOpenModal1() {
-    //手动切换模态框。   还有一个modal('hide')	手动隐藏模态框。
-        $('#myModal1').modal('toggle');
 
-        var form = document.createElement("form");
-        form.setAttribute("id", "job-list");
+  var ModaDelArray = new Array();
 
-        var NameInput = document.createElement("input");
-        NameInput.setAttribute("type", "text");
-        NameInput.setAttribute("class", "form-control");
-        NameInput.setAttribute("placeholder", "str: Job Name");
-        NameInput.setAttribute("id", "jobName");
+  // Create table with data set
+  var table=$('#example1').DataTable( {
+        "columns": [
+            { "title": "Job Name" },
+            { "title": "SPEC" },
+            { "title": "PTTL" },
+            { "title": "AllowedLoss" },
+            { "title": "Group" },
+            { "title": "Edit" },  
 
+        ]
+    } );
 
-
-        var SPECInput = document.createElement("input");
-        SPECInput.setAttribute("type", "text");
-        SPECInput.setAttribute("class", "form-control");
-        SPECInput.setAttribute("placeholder", "str: * * * * * */秒 分 时 日 月 星");
-        SPECInput.setAttribute("id", "SPEC");
-        
-        var PTTLInput = document.createElement("input");
-        PTTLInput.setAttribute("type", "text");
-        PTTLInput.setAttribute("class", "form-control");
-        PTTLInput.setAttribute("placeholder", "int: Key time out Seconds");
-        PTTLInput.setAttribute("id", "PTTL");
-
-        var AllowedLossInput = document.createElement("input");
-        AllowedLossInput.setAttribute("type", "text");
-        AllowedLossInput.setAttribute("class", "form-control");
-        AllowedLossInput.setAttribute("placeholder", "int: 在错误队列时允许掉包的数量");
-        AllowedLossInput.setAttribute("id", "AllowedLoss" );
-
-        var GroupStr = document.createElement("p");
-        GroupStr.innerHTML  = "Group:"
-
-        var GroupInput = document.createElement("select");
-        GroupInput.setAttribute("class", "form-control");
-        GroupInput.setAttribute("name", "GroupArray");
+  DataTableDataUpdate();
 
 
+  function DataTableDataUpdate() {
 
-        data1 = $.ajax({type: "GET", url: "/v1/ip/group", async: false});
+    table
+        .clear()
+        .draw();
 
-        groups = data1.responseJSON;
-        if (data1.status == 200) {
-          for (var i=0,len=groups.length; i<len; i++) {
-            var tmpSelect = document.createElement("option");
-            tmpSelect.innerHTML=groups[i];
-            GroupInput.appendChild(tmpSelect);
-          };
-        };
+    data1 = $.ajax({type: "GET", url: "/v1/job", async: false});
 
+    jobs = data1.responseJSON;
+    if (data1.status == 200) {
+      for (var i=0,len=jobs.length; i<len; i++) {
+        jobJson = $.ajax({type: "GET",dataType: "json", url: "/v1/job/" + jobs[i], async: false}).responseJSON; 
+        jobData = JSON.parse(jobJson);
+        table.row.add([jobs[i],jobData.name, jobData.pttl,jobData.allowedloss,jobData.group,'<button type="button" class="btn btn-primary" onClick=ModaEdit(\''+jobs[i]+'\') >  edit</button>']);
+      };
+    };
 
-        
-        form.appendChild(NameInput); 
-        form.appendChild(SPECInput); 
-        form.appendChild(PTTLInput); 
-        form.appendChild(AllowedLossInput); 
-        form.appendChild(GroupStr); 
-        form.appendChild(GroupInput); 
+    table.draw( false );
 
-        document.getElementById("modalBody").appendChild(form);
+  }
 
 
-        if (document.getElementById("job-list")) {
-          document.getElementById("modalBody").removeChild(document.getElementById("job-list"));
-        }
-
-        document.getElementById("modalBody").appendChild(form);
-        $('[data-mask]').inputmask()
+  function ModaEdit(objectName) {
+    // init 
+    ModaDelArray.length = 0
+    $('#target').html("");
+    if (typeof  objectName !== "undefined") {
+      jobJson = $.ajax({type: "GET",dataType: "json", url: "/v1/job/" + objectName, async: false}).responseJSON; 
+      jobData = JSON.parse(jobJson);
     }
+
+    //手动切换模态框。   还有一个modal('hide')	手动隐藏模态框。
+    $('#myModal1').modal('toggle');
+
+    var form = document.createElement("moda-form");
+    form.setAttribute("id", "job-list");
+
+    var NameInput = document.createElement("input");
+    NameInput.setAttribute("type", "text");
+    NameInput.setAttribute("class", "form-control");
+    NameInput.setAttribute("placeholder", "str: Job Name");
+    NameInput.setAttribute("id", "jobName");
+    if (typeof  objectName !== "undefined") {
+      NameInput.setAttribute("value", jobData.name);
+    }
+    form.appendChild(NameInput); 
+
+    var SPECInput = document.createElement("input");
+    SPECInput.setAttribute("type", "text");
+    SPECInput.setAttribute("class", "form-control");
+    SPECInput.setAttribute("placeholder", "str: * * * * * */秒 分 时 日 月 星");
+    SPECInput.setAttribute("id", "SPEC");
+    if (typeof  objectName !== "undefined") {
+      SPECInput.setAttribute("value", jobData.spec);
+    }
+    form.appendChild(SPECInput); 
+
+    var PTTLInput = document.createElement("input");
+    PTTLInput.setAttribute("type", "text");
+    PTTLInput.setAttribute("class", "form-control");
+    PTTLInput.setAttribute("placeholder", "int: Key time out Seconds");
+    PTTLInput.setAttribute("id", "PTTL");
+    if (typeof  objectName !== "undefined") {
+      PTTLInput.setAttribute("value", jobData.pttl);
+    }
+    form.appendChild(PTTLInput); 
+
+    var AllowedLossInput = document.createElement("input");
+    AllowedLossInput.setAttribute("type", "text");
+    AllowedLossInput.setAttribute("class", "form-control");
+    AllowedLossInput.setAttribute("placeholder", "int: 在错误队列时允许掉包的数量");
+    AllowedLossInput.setAttribute("id", "AllowedLoss" );
+    if (typeof  objectName !== "undefined") {
+      AllowedLossInput.setAttribute("value", jobData.allowedloss);
+    }
+    form.appendChild(AllowedLossInput); 
+
+    var GroupStr = document.createElement("p");
+    GroupStr.innerHTML  = "Group:"
+    form.appendChild(GroupStr); 
+
+    if (typeof  objectName !== "undefined") {
+      for (var i=0,len=jobData.group.length; i<len; i++) {
+        var existGroupInput = CreateChild(jobData.group[i]);
+
+        form.appendChild(existGroupInput); 
+      }
+
+    }
+
+
+    // var GroupInput = document.createElement("select");
+    // GroupInput.setAttribute("class", "form-control");
+    // GroupInput.setAttribute("name", "GroupArray");
+
+    // data1 = $.ajax({type: "GET", url: "/v1/ip/group", async: false});
+
+    // groups = data1.responseJSON;
+    // if (data1.status == 200) {
+    //   for (var i=0,len=groups.length; i<len; i++) {
+    //     var tmpSelect = document.createElement("option");
+    //     tmpSelect.innerHTML=groups[i];
+    //     GroupInput.appendChild(tmpSelect);
+    //   };
+    // };
+
+    // form.appendChild(GroupInput); 
+
+    document.getElementById("modalBody").appendChild(form);
+
+
+    if (document.getElementById("job-list")) {
+      document.getElementById("modalBody").removeChild(document.getElementById("job-list"));
+    }
+
+    document.getElementById("modalBody").appendChild(form);
+    $('[data-mask]').inputmask()
+
+    $("moda-form").on("click", "button", function(e) {
+      e.preventDefault();
+      ModaDelArray.push( $(this).siblings("input").val());
+      $(this).parent().remove();
+    });
+
+  }
+
+  function CreateChild(group){
+    var tmpli = document.createElement("li");
+    tmpli.setAttribute("class", "input-group-append");
+
+    var existGroupInput = document.createElement("select");
+    existGroupInput.setAttribute("class", "form-control");
+    existGroupInput.setAttribute("name", "GroupArray");
+
+    if (typeof  group !== "undefined") { 
+      var tmpSelect = document.createElement("option");
+      tmpSelect.setAttribute("selected", "selected");
+      tmpSelect.innerHTML=group;
+      existGroupInput.appendChild(tmpSelect);
+    }
+
+    var groups = $.ajax({type: "GET", url: "/v1/ip/group", async: false}).responseJSON;
+    for (var i=0,len=groups.length; i<len; i++) {
+      var tmpSelect = document.createElement("option");
+      tmpSelect.innerHTML=groups[i];
+      existGroupInput.appendChild(tmpSelect);
+    }
+
+    tmpli.appendChild(existGroupInput);
+
+    // create del button
+    var delButton = document.createElement("button");
+    delButton.setAttribute("class", "input-group-text");
+    delButton.innerHTML="del" ;
+
+    tmpli.appendChild(delButton); 
+    return tmpli
+}
+
+
 
 
 // <!-- add IP script -->
     
-function AddGroupIPChild() {
+function ModeAddChild() {
 
   // Create a form synamically
   var form = document.getElementById("job-list");
 
   // Create an input element for Full Name
-  var ArrayInput = document.createElement("select");
-  ArrayInput.setAttribute("class", "form-control");
-  ArrayInput.setAttribute("name", "GroupArray");
-
-
-
-  data1 = $.ajax({type: "GET", url: "/v1/ip/group", async: false});
-
-  groups = data1.responseJSON;
-  if (data1.status == 200) {
-    for (var g=0,len=groups.length; g<len; g++) {
-      var checkGroup = false
-      var GroupArray = document.getElementsByName('GroupArray');
-      for (var i = 0; i < GroupArray.length; i++) {
-        if ( GroupArray[i].value == groups[g] ) {
-          
-          checkGroup = true
-          break;
-        }
-      }
-
-      if (checkGroup) {
-        continue
-      }
-
-      var tmpSelect = document.createElement("option");
-      tmpSelect.setAttribute("id", "groupSelectOption");
-
-      tmpSelect.innerHTML=groups[g];
-      ArrayInput.appendChild(tmpSelect);
-    };
-  };
+  var ArrayInput = CreateChild()
 
   // Append the full name input to the form
   form.appendChild(ArrayInput); 
@@ -229,7 +305,6 @@ function AddJobRequest() {
         allowedloss: parseInt($("#AllowedLoss").val()),
         group:  dataList,
     }
-    console.log(person)
 
     $('#target').html('sending..');
 
@@ -249,6 +324,7 @@ function AddJobRequest() {
 
 
     $('#myModal1').modal('hide');
+    DataTableDataUpdate();
 }
 
 
@@ -260,35 +336,10 @@ function AddJobRequest() {
 <!-- Page specific script -->
 <script>
 
-// Create table with data set
-  var table=$('#example1').DataTable( {
-      "columns": [
-          { "title": "Job Name" },
-          { "title": "SPEC" },
-          { "title": "PTTL" },
-          { "title": "AllowedLoss" },
-          { "title": "Group" },
-          { "title": "Edit" },  
-
-      ]
-  } );
-
-
-  data1 = $.ajax({type: "GET", url: "/v1/job", async: false});
-
-  jobs = data1.responseJSON;
-  if (data1.status == 200) {
-    for (var i=0,len=jobs.length; i<len; i++) {
-      jobJson = $.ajax({type: "GET",dataType: "json", url: "/v1/job/" + jobs[i], async: false}).responseJSON; 
-      jobData = JSON.parse(jobJson);
-      table.row.add([jobs[i],jobData.name, jobData.pttl,jobData.allowedloss,jobData.group,"edit"]);
-    };
-  };
 
 
 
-  
-  table.draw( false );
+
 
 
 </script>

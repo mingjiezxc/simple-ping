@@ -93,6 +93,11 @@ func IPGroupDelIP(c *gin.Context) {
 		return
 	}
 
+	if len(groupData.IP) == 0 {
+		c.String(203, "Request IP is Nil")
+		return
+	}
+
 	err := rdb.SRem(ctx, GroupNameKey+groupData.Name, groupData.IP).Err()
 	if PrintErr(err) {
 		c.JSON(201, err)

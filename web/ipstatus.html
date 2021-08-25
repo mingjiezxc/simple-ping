@@ -65,21 +65,23 @@
 // Create table with data set
   var table=$('#example1').DataTable( {
       "columns": [
-          { "name": "IP" },
-          { "name": "Agent" },
-          { "name": "PTLL" },
-          { "name": "InErrList" },
-          { "name": "MsAvg" },
-          { "name": "Loss" },
-          { "name": "Lost" },
-          { "name": "UpdateTime" },
+          { "data":"Agent","title":"Agent", "name": "Agent" },
+          { "data":"IP","title":"IP", "name": "IP" },
+          { "data":"PTLL","title":"PTLL", "name": "PTLL" },
+          { "data":"InErrList","title":"InErrList", "name": "InErrList" },
+          { "data":"MsAvg","title":"MsAvg", "name": "MsAvg" },
+          { "data":"SendCount","title":"SendCount", "name": "SendCount" },
+          { "data":"ReceiveCount","title":"ReceiveCount", "name": "ReceiveCount" },
+          { "data":"Loss","title":"Loss", "name": "Loss" },
+          { "data":"Lost","title":"Lost", "name": "Lost" },
+          { "data":"UpdateTime","title":"UpdateTime", "name": "UpdateTime" },
       ]
   } );
 
 
   ips = $.ajax({type: "GET", url: "/v1/ip/status", async: false}).responseJSON;
-  table.rows.add(ips);
-  
+  table.rows.add(ips);   
+
   table.draw( false );
 
 
