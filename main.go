@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	"gopkg.in/yaml.v2"
 
 	_ "simple-ping/docs"
 
@@ -15,12 +18,9 @@ import (
 )
 
 var (
-	rdb = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379", // redis地址
-		Password: "",               // redis没密码，没有设置，则留空
-		DB:       0,                // 使用默认数据库
-	})
-	ctx = context.Background()
+	rdb    *redis.Client
+	config ConfigYaml
+	ctx    = context.Background()
 )
 
 // redis key
@@ -51,6 +51,26 @@ var (
 
 // @BasePath /v1
 func main() {
+
+	// read config file
+	configfile, err := ioutil.ReadFile("./config.yaml")
+	if CheckPrintErr(err) {
+		os.Exit(1)
+	}
+
+	// yaml marshal config
+	err = yaml.Unmarshal(configfile, &config)
+	if CheckPrintErr(err) {
+		os.Exit(2)
+	}
+
+	// create redis client
+	rdb = redis.NewClient(&redis.Options{
+		Addr:     config.RedisAddr,
+		Password: config.RedisPassword,
+		DB:       config.RedisDB,
+	})
+
 	r := gin.Default()
 	// 配置模板
 	r.LoadHTMLGlob("web/*")
@@ -107,7 +127,7 @@ func main() {
 	url := ginSwagger.URL("/swagger/doc.json")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 
-	r.Run("0.0.0.0:8445") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	r.Run(config.ServerAddr) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
 
 // @Summary a ping api
@@ -130,4 +150,11 @@ func PrintErr(err error) bool {
 		return true
 	}
 	return false
+}
+
+type ConfigYaml struct {
+	RedisAddr     string `yaml:"RedisAddr"`
+	RedisPassword string `yaml:"RedisPassword"`
+	RedisDB       int    `yaml:"RedisDB"`
+	ServerAddr    string `yaml:"ServerAddr"`
 }

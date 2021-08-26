@@ -1,0 +1,6 @@
+# redis server info
+RedisAddr:     "localhost:6379"
+RedisPassword: ""
+RedisDB:       0
+ServerAddr: "0.0.0.0:8445"
+
