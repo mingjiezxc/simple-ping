@@ -54,13 +54,13 @@ func main() {
 
 	// read config file
 	configfile, err := ioutil.ReadFile("./config.yaml")
-	if CheckPrintErr(err) {
+	if PrintErr(err) {
 		os.Exit(1)
 	}
 
 	// yaml marshal config
 	err = yaml.Unmarshal(configfile, &config)
-	if CheckPrintErr(err) {
+	if PrintErr(err) {
 		os.Exit(2)
 	}
 
